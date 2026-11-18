@@ -88,3 +88,7 @@ from the image and keeps every member's data. Running agent turns stop.
   T3 Connect link, not through a port on the host.
 - Each member's container has its own Docker network. It can reach the internet, but not other
   members' containers or the services their agents start.
+- Containers can still reach services listening on the host itself, such as SSH or a database.
+  Use a host that runs nothing else, or block new connections from Docker networks to the host:
+  `iptables -I INPUT -i br-+ -m conntrack --ctstate NEW -j DROP`. That rule covers every
+  user-defined Docker network on the host, not only the runner's.
