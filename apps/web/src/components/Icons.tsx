@@ -534,6 +534,17 @@ export const MacAccessibilityIcon: Icon = (props) => {
   );
 };
 
+export const BitwardenIcon: Icon = (props) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M5 1h14a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4V5a4 4 0 0 1 4-4m.5 3.5v7c0 4 3.4 6.6 6.5 8.3 3.1-1.7 6.5-4.3 6.5-8.3v-7Z"
+      fill="currentColor"
+      fillRule="evenodd"
+    />
+    <path d="M12 6.5h4.5v5c0 2.6-2.1 4.5-4.5 5.9Z" fill="currentColor" />
+  </svg>
+);
+
 export const OnePasswordIcon: Icon = (props) => (
   <svg {...props} viewBox="0 0 24 24" fill="none">
     <path

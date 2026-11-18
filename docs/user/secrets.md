@@ -9,44 +9,63 @@ work everywhere.
 
 ## Secret providers
 
-1Password is the supported provider. T3 Code reads secrets with the
-[1Password CLI](https://developer.1password.com/docs/cli/) (`op`), so `op` must be installed and
-signed in on the machine that runs the T3 Code server. When you use T3 Code on another machine or
-from your phone, that is the remote machine, not the device in front of you.
+T3 Code supports 1Password and Bitwarden Secrets Manager. The provider's CLI runs on the machine
+that runs the T3 Code server. When you use T3 Code on another machine or from your phone, that is
+the remote machine, not the device in front of you.
+
+To add one, open **Settings → Secrets**, select **Add provider**, pick 1Password or Bitwarden, and
+enter a name. Secret providers belong to the environment you are connected to. Each environment
+keeps its own list.
+
+### 1Password
+
+T3 Code reads secrets with the [1Password CLI](https://developer.1password.com/docs/cli/) (`op`), so
+`op` must be installed and signed in on the server's machine. Enter the 1Password account: the
+shorthand, sign-in address (without `https://`), or ID that `op account list` shows.
 
 A desktop sign-in asks for approval on that machine, which a remote user cannot answer. On a remote
 or headless server, sign `op` in with a [service account](./secrets-1password-service-account.md) or a
 [Connect server](./secrets-1password-connect.md) instead.
 
-To add one, open **Settings → Secrets**, select **Add provider**, and enter a name and the
-1Password account: the shorthand, sign-in address (without `https://`), or ID that
-`op account list` shows. Secret providers belong to the environment you are connected to. Each
-environment keeps its own list.
+### Bitwarden
+
+T3 Code reads secrets from Bitwarden Secrets Manager with the
+[Secrets Manager CLI](https://bitwarden.com/help/secrets-manager-cli/) (`bws`), signed in with a
+machine account's access token. Nothing needs unlocking, so it works on headless servers and in
+containers. The token comes from the server's `BWS_ACCESS_TOKEN` environment variable or from a
+file you name, such as a container secret. T3 Code never saves the token in settings. See
+[Bitwarden Secrets Manager](./secrets-bitwarden.md) to set it up.
+
+The Bitwarden Password Manager (personal vaults and the `bw` CLI) is not supported.
 
 ## Use a secret reference
 
 Credential fields in Settings, such as provider environment variables and credentials, source
 control tokens, usage limit keys, and device host tokens, show a source picker next to the field.
-Pick **Value** to save the credential itself, or pick a secret provider and enter a reference such
-as `op://vault/item/field`. Copy the reference from 1Password with **Copy Secret Reference**.
+Pick **Value** to save the credential itself, or pick a secret provider and enter a reference:
+
+- 1Password: `op://vault/item/field`. Copy it from 1Password with **Copy Secret Reference**.
+- Bitwarden: `bws://` followed by the secret's ID, for example
+  `bws://be8e0ad8-d545-4017-a55a-b02f014d4158`. Copy the ID from the secret in Secrets Manager.
+
 Select the check button next to a reference to read it now. If it reads, providers that use it
 start using the new value.
 
 T3 Code reads the secret when it needs it, for example when a provider starts. Change the
-credential in 1Password and refresh to use the new value.
+credential in your secret provider and refresh to use the new value.
 
 ## When a secret cannot be read
 
-If 1Password is locked or signed out, the provider or feature that needs the secret shows an error
-naming the secret provider. Unlock 1Password on the server's machine, then select **Refresh** in
-**Settings → Providers**. T3 Code never replaces a saved credential it cannot read with another
-login.
+If 1Password is locked or signed out, or Bitwarden cannot find the access token, the provider or
+feature that needs the secret shows an error naming the secret provider. Fix it on the server's
+machine, then select **Refresh** in **Settings → Providers**. T3 Code never replaces a saved
+credential it cannot read with another login.
 
 ## Remove a secret provider
 
 When you remove a secret provider in **Settings → Secrets**, T3 Code lists the fields that read
 from it. Removing it clears those fields, so set them again before you need them. The secrets in
-1Password are not touched.
+1Password or Bitwarden are not touched.
 
 ## When an agent asks for a secret
 
@@ -55,8 +74,9 @@ you to paste it into the chat. Type or paste the value and select **Save securel
 **Decline**. You can answer from web, desktop, or mobile.
 
 If the environment has a secret provider, the card also lets you pick it and enter a reference
-instead of the value. T3 Code reads the secret once, when you answer. If 1Password is locked, the
-card says so and the request stays open: unlock it and try again, or enter the value.
+instead of the value. T3 Code reads the secret once, when you answer. If the secret cannot be
+read, for example because 1Password is locked, the card says so and the request stays open: fix it
+and try again, or enter the value.
 
 The value never appears in the conversation. Most requests keep it from the agent too: T3 Code
 passes it to the tool that needs it. When an agent has to run a command with the value, the card

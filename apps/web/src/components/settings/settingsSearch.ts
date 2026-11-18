@@ -1437,7 +1437,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "secret-providers",
     title: msg("Secret providers"),
     to: "/settings/secrets",
-    searchTerms: [msg("1password vault credentials api key")],
+    searchTerms: [msg("1password bitwarden vault credentials api key")],
     secretsFeatureOnly: true,
   },
   {
@@ -1445,7 +1445,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: msg("Add secret provider"),
     to: "/settings/secrets",
     targetId: "secret-providers",
-    searchTerms: [msg("new 1password vault op cli account")],
+    searchTerms: [msg("new 1password bitwarden vault op bws cli account")],
     secretsFeatureOnly: true,
   },
   {

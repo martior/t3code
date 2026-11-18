@@ -1,4 +1,5 @@
 import type { EnvironmentId, SecretProviderConfig, SecretProviderId } from "@t3tools/contracts";
+import * as OnePassword from "@t3tools/secret-provider-onepassword/shared/definition";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { T, useGT, useMessages, Var } from "gt-react";
@@ -6,7 +7,6 @@ import { T, useGT, useMessages, Var } from "gt-react";
 import { useEnvironmentSettings, useUpdateEnvironmentSettings } from "../../hooks/useSettings";
 import type { EnvironmentPresentation } from "../../state/environments";
 import { useEnvironmentSessionState } from "../../state/session";
-import { OnePasswordIcon, type Icon } from "../Icons";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -19,6 +19,7 @@ import {
 import { Button } from "../ui/button";
 import { SecretProviderDialog } from "./SecretProviderDialog";
 import { classifySecretProvider } from "./SecretProviderDialog.logic";
+import { secretProviderIcon } from "./SecretSourceInput";
 import { secretProviderUses } from "./SecretsSettings.logic";
 import {
   classifyProviderEnvironmentAccess,
@@ -28,12 +29,6 @@ import { useSettingsScope } from "./SettingsScopeContext";
 import { RedactedSensitiveText } from "./RedactedSensitiveText";
 import { useSearchableSetting } from "./settingsSearch";
 import { SettingsPageContainer, SettingsRow, SettingsSection } from "./settingsLayout";
-
-const SECRET_PROVIDER_KINDS: Readonly<
-  Record<string, { readonly name: string; readonly icon: Icon }>
-> = {
-  one_password: { name: "1Password", icon: OnePasswordIcon },
-};
 
 export function SecretsSettingsPanel() {
   const setting = useSearchableSetting();
@@ -126,31 +121,29 @@ function EnvironmentSecretProviders({
           <SettingsRow
             title={gt("No secret providers configured.")}
             description={gt(
-              "Add a 1Password account, then pick it as the source of a provider variable.",
+              "Add a 1Password or Bitwarden account, then pick it as the source of a provider variable.",
             )}
           />
         ) : (
           entries.map(([id, config]) => {
             const classified = classifySecretProvider(config);
-            const kind =
-              classified.kind === "unsupported"
-                ? undefined
-                : SECRET_PROVIDER_KINDS[classified.kind];
+            const KindIcon =
+              classified.kind === "unsupported" ? undefined : secretProviderIcon(classified.kind);
             return (
               <SettingsRow
                 key={id}
                 title={
                   <span className="flex min-w-0 items-center gap-2">
-                    {kind ? (
-                      <kind.icon className="size-4.5 shrink-0 text-foreground/80" aria-hidden />
+                    {KindIcon ? (
+                      <KindIcon className="size-4.5 shrink-0 text-foreground/80" aria-hidden />
                     ) : null}
                     <span className="min-w-0 wrap-anywhere">{config.label}</span>
                   </span>
                 }
                 description={
-                  classified.kind === "one_password" && kind ? (
+                  classified.kind === "one_password" ? (
                     <span className="flex min-w-0 items-center gap-1">
-                      <span className="shrink-0">{kind.name} ·</span>
+                      <span className="shrink-0">{OnePassword.definition.label} ·</span>
                       <RedactedSensitiveText
                         value={classified.account}
                         ariaLabel={gt("Toggle account visibility")}
@@ -159,6 +152,12 @@ function EnvironmentSecretProviders({
                         className="max-w-full truncate"
                       />
                     </span>
+                  ) : classified.kind === "bitwarden" ? (
+                    <span className="min-w-0 wrap-anywhere">
+                      {classified.accessTokenFile === undefined
+                        ? gt("Bitwarden · token from BWS_ACCESS_TOKEN")
+                        : gt("Bitwarden · token file {path}", { path: classified.accessTokenFile })}
+                    </span>
                   ) : (
                     gt("Unsupported provider ({kind})", { kind: config.kind })
                   )
@@ -166,7 +165,7 @@ function EnvironmentSecretProviders({
                 control={
                   !readOnly ? (
                     <div className="flex items-center gap-1">
-                      {kind ? (
+                      {KindIcon ? (
                         <Button
                           size="xs"
                           variant="ghost"

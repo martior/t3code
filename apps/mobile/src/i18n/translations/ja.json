@@ -131,6 +131,7 @@
   "8c2d901183b4e219": "シークレットを貼り付け",
   "610aea624f895a78": "安全に保存し、非公開にしました",
   "329b7854b7e0546e": "{example} のような 1Password の参照を使用してください。",
+  "fd6951dffc30f918": "{example} のような Bitwarden の参照を使用してください。",
   "d68b539295c009d3": "{count, plural, other {{count} 件のタスクを委任しました}}",
   "0ccb2e7aa712bec4": "{count, plural, other {{count} 件のタスクを委任しようとしました}}",
   "73208f89396763ce": "{count, plural, other {{count} 件のスレッドの中断をリクエストしました}}",

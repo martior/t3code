@@ -131,6 +131,7 @@
   "8c2d901183b4e219": "Geheimnis einfügen",
   "610aea624f895a78": "Sicher gespeichert und privat gehalten",
   "329b7854b7e0546e": "Verwende eine 1Password-Referenz wie {example}.",
+  "fd6951dffc30f918": "Verwende eine Bitwarden-Referenz wie {example}.",
   "d68b539295c009d3": "{count, plural, one {{count} Aufgabe delegiert} other {{count} Aufgaben delegiert}}",
   "0ccb2e7aa712bec4": "{count, plural, one {Versucht, {count} Aufgabe zu delegieren} other {Versucht, {count} Aufgaben zu delegieren}}",
   "73208f89396763ce": "{count, plural, one {Unterbrechung für {count} Thread angefordert} other {Unterbrechung für {count} Threads angefordert}}",

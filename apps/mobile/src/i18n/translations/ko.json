@@ -131,6 +131,7 @@
   "8c2d901183b4e219": "시크릿 붙여 넣기",
   "610aea624f895a78": "안전하게 저장되어 비공개로 유지됩니다",
   "329b7854b7e0546e": "{example}과(와) 같은 1Password 참조를 사용하세요.",
+  "fd6951dffc30f918": "{example}과(와) 같은 Bitwarden 참조를 사용하세요.",
   "d68b539295c009d3": "{count, plural, other {작업 {count}개를 위임함}}",
   "0ccb2e7aa712bec4": "{count, plural, other {작업 {count}개 위임 시도함}}",
   "73208f89396763ce": "{count, plural, other {스레드 {count}개 중단 요청함}}",

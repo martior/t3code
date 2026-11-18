@@ -12,6 +12,7 @@
     "typecheck": "effect-tsgo tsrs --noEmit"
   },
   "dependencies": {
+    "@t3tools/secret-provider-bitwarden": "workspace:*",
     "@t3tools/secret-provider-core": "workspace:*",
     "@t3tools/secret-provider-onepassword": "workspace:*"
   }
