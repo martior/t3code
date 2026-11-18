@@ -33,7 +33,9 @@ const decodeSecret = Schema.decodeUnknownOption(
 // A secret is passed on verbatim; surrounding whitespace can be part of it.
 const nonEmpty = (value: string) => (value.trim().length > 0 ? value : undefined);
 
-const TOKEN_FAILURE = /access token|invalid_client|invalid_grant|unauthori[sz]ed|\b401\b/i;
+// Malformed tokens fail locally ("decryption key", "base64") before bws reaches the server.
+const TOKEN_FAILURE =
+  /access token|decryption key|invalid base64|invalid_client|invalid_grant|unauthori[sz]ed|\b401\b/i;
 const SECRET_UNAVAILABLE = /not found|\b404\b|forbidden|\b403\b/i;
 
 /** Fails with a reason that stops every read, since no secret can be read without a token. */

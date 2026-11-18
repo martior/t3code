@@ -193,7 +193,19 @@ describe("Bitwarden driver", () => {
         "Bitwarden rejected the access token",
       ],
       [
-        { code: 1, stderr: 'Error:\n   0: [400 Bad Request] {"error":"invalid_client"}' },
+        { code: 1, stderr: "Error:\n   0: Doesn't contain a decryption key" },
+        "Bitwarden rejected the access token",
+      ],
+      [
+        { code: 1, stderr: "Error:\n   0: Invalid base64 length: expected 16, got 32" },
+        "Bitwarden rejected the access token",
+      ],
+      [
+        {
+          code: 1,
+          stderr:
+            'Error:\n   0: Received error message from server: [400 Bad Request] {"error":"invalid_client"}',
+        },
         "Bitwarden rejected the access token",
       ],
       [
