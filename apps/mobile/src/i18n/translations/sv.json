@@ -131,6 +131,7 @@
   "8c2d901183b4e219": "Klistra in hemligheten",
   "610aea624f895a78": "Sparad säkert och hålls privat",
   "329b7854b7e0546e": "Använd en 1Password-referens som {example}.",
+  "fd6951dffc30f918": "Använd en Bitwarden-referens som {example}.",
   "d68b539295c009d3": "{count, plural, one {Delegerade {count} uppgift} other {Delegerade {count} uppgifter}}",
   "0ccb2e7aa712bec4": "{count, plural, one {Försökte delegera {count} uppgift} other {Försökte delegera {count} uppgifter}}",
   "73208f89396763ce": "{count, plural, one {Begärde avbrott för {count} tråd} other {Begärde avbrott för {count} trådar}}",

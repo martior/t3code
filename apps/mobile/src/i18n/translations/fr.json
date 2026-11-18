@@ -131,6 +131,7 @@
   "8c2d901183b4e219": "Collez le secret",
   "610aea624f895a78": "Enregistré de façon sécurisée et gardé privé",
   "329b7854b7e0546e": "Utilisez une référence 1Password comme {example}.",
+  "fd6951dffc30f918": "Utilisez une référence Bitwarden comme {example}.",
   "d68b539295c009d3": "{count, plural, one {{count} tâche déléguée} other {{count} tâches déléguées}}",
   "0ccb2e7aa712bec4": "{count, plural, one {Tentative de délégation de {count} tâche} other {Tentative de délégation de {count} tâches}}",
   "73208f89396763ce": "{count, plural, one {Interruption demandée pour {count} fil} other {Interruption demandée pour {count} fils}}",

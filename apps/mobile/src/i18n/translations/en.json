@@ -131,6 +131,7 @@
   "8c2d901183b4e219": "Paste the secret",
   "610aea624f895a78": "Saved securely and kept private",
   "329b7854b7e0546e": "Use a 1Password reference like {example}.",
+  "fd6951dffc30f918": "Use a Bitwarden reference like {example}.",
   "d68b539295c009d3": "{count, plural, one {Delegated {count} task} other {Delegated {count} tasks}}",
   "0ccb2e7aa712bec4": "{count, plural, one {Tried to delegate {count} task} other {Tried to delegate {count} tasks}}",
   "73208f89396763ce": "{count, plural, one {Requested interrupts for {count} thread} other {Requested interrupts for {count} threads}}",

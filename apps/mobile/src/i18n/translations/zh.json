@@ -131,6 +131,7 @@
   "8c2d901183b4e219": "粘贴凭据",
   "610aea624f895a78": "已安全保存并保密",
   "329b7854b7e0546e": "请使用类似 {example} 的 1Password 引用。",
+  "fd6951dffc30f918": "请使用类似 {example} 的 Bitwarden 引用。",
   "d68b539295c009d3": "{count, plural, other {已委派 {count} 个任务}}",
   "0ccb2e7aa712bec4": "{count, plural, other {尝试委派 {count} 个任务}}",
   "73208f89396763ce": "{count, plural, other {已请求中断 {count} 个会话}}",
