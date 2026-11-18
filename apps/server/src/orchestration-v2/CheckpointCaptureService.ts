@@ -132,6 +132,7 @@ export const layer: Layer.Layer<
       const commandId = CommandId.make(`command:effect:checkpoint.capture:${run.id}`);
       yield* eventSink.commitCommand({
         commandId,
+        issuer: { kind: "system" },
         threadId: input.threadId,
         commandType: "checkpoint.capture",
         acceptedAt: capturedAt,

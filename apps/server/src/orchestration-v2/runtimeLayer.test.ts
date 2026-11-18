@@ -6829,6 +6829,7 @@ it.layer(layerTest)("OrchestrationV2LayerLive lifecycle", (it) => {
         const now = yield* DateTime.now;
         yield* eventSink.commitCommand({
           commandId: CommandId.make("restart-cancel"),
+          issuer: { kind: "system" },
           threadId,
           commandType: "provider-runtime.reconcile",
           acceptedAt: now,
@@ -6951,6 +6952,7 @@ it.layer(layerTest)("OrchestrationV2LayerLive lifecycle", (it) => {
         const now = yield* DateTime.now;
         yield* eventSink.commitCommand({
           commandId: CommandId.make(`restart-${status}-${kind}-reconcile`),
+          issuer: { kind: "system" },
           threadId,
           commandType: "provider-runtime.reconcile",
           acceptedAt: now,
@@ -7354,6 +7356,7 @@ it.layer(layerTest)("OrchestrationV2LayerLive lifecycle", (it) => {
           const now = yield* DateTime.now;
           yield* eventSink.commitCommand({
             commandId: CommandId.make(commandId),
+            issuer: { kind: "system" },
             threadId,
             commandType: "provider-runtime.reconcile",
             acceptedAt: now,
@@ -11053,6 +11056,7 @@ it.layer(layerTest)("snooze queued runs", (it) => {
         const beforeRecovery = yield* orchestrator.getThreadProjection(threadId);
         yield* eventSink.commitCommand({
           commandId: CommandId.make(`recovery:${threadId}`),
+          issuer: { kind: "system" },
           threadId,
           commandType: "provider-runtime.reconcile",
           acceptedAt: now,

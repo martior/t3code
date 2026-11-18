@@ -68,6 +68,7 @@ it.effect("rejects a planned fork whose source was deleted before it committed",
     });
     const plannedFork = {
       commandId: CommandId.make("fork"),
+      issuer: { kind: "system" } as const,
       commandType: "thread.fork",
       threadId: targetId,
       acceptedAt: now,

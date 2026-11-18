@@ -51,6 +51,7 @@ import { getServerOwners } from "./telemetry/Identify.ts";
 import * as ServerEnvironment from "./environment/ServerEnvironment.ts";
 import * as EnvironmentAuth from "./auth/EnvironmentAuth.ts";
 import { formatHeadlessServeOutput, issueHeadlessServeAccessInfo } from "./startupAccess.ts";
+import { CurrentCommandIssuer, withCommandIssuer } from "./orchestration-v2/CommandIssuer.ts";
 
 export class ServerRuntimeStartupError extends Schema.TaggedError<ServerRuntimeStartupError>()(
   "ServerRuntimeStartupError",
@@ -119,9 +120,11 @@ export const makeCommandGate = Effect.gen(function* () {
     }
 
     const result = yield* Deferred.make<A, E | ServerRuntimeStartupError>();
+    // The worker fiber runs it, so it carries its caller's issuer over.
+    const issuer = yield* CurrentCommandIssuer;
     yield* Queue.offer(commandQueue, {
       run: Deferred.await(commandReady).pipe(
-        Effect.flatMap(() => effect),
+        Effect.flatMap(() => effect.pipe(withCommandIssuer(issuer))),
         Effect.exit,
         Effect.flatMap((exit) => settleQueuedCommand(result, exit)),
       ),

@@ -45,6 +45,7 @@ import {
 } from "../attachmentStore.ts";
 import * as ServerConfig from "../config.ts";
 import { CloudManagedEndpointRuntime } from "../cloud/ManagedEndpointRuntime.ts";
+import { withCommandIssuer } from "../orchestration-v2/CommandIssuer.ts";
 import * as CommandOutputHub from "../orchestration-v2/CommandOutputHub.ts";
 import { GUEST_FAILURE } from "../orchestration-v2/GuestShareDecider.ts";
 import * as Orchestrator from "../orchestration-v2/Orchestrator.ts";
@@ -291,9 +292,13 @@ const make = Effect.gen(function* () {
   );
 
   const dispatchGuestCommand = (
-    command: Parameters<Orchestrator.OrchestratorV2["Service"]["dispatch"]>[0],
+    command: Extract<
+      Parameters<Orchestrator.OrchestratorV2["Service"]["dispatch"]>[0],
+      { readonly type: "thread.guest-share.redeem" | "thread.guest-message.submit" }
+    >,
   ) =>
     orchestrator.dispatch(command).pipe(
+      withCommandIssuer({ kind: "guest", threadId: command.threadId, shareId: command.shareId }),
       Effect.mapError(
         (error) =>
           new GuestShareAccessError({

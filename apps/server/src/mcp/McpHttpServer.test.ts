@@ -1,3 +1,4 @@
+import { type CommandIssuer, CurrentCommandIssuer } from "../orchestration-v2/CommandIssuer.ts";
 import * as Orchestrator from "../orchestration-v2/Orchestrator.ts";
 import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
 import * as ThreadManagementService from "../orchestration-v2/ThreadManagementService.ts";
@@ -1275,6 +1276,7 @@ it.effect("admits provider and OAuth client credentials and points only clients 
         issuedAt: 1,
       };
       const seen: Array<McpInvocationContext.McpInvocationScope> = [];
+      const issuers: Array<CommandIssuer> = [];
       const ProbeToolkit = Toolkit.make(
         Tool.make("probe", {
           description: "Reports the caller.",
@@ -1291,6 +1293,8 @@ it.effect("admits provider and OAuth client credentials and points only clients 
             probe: McpToolAccess.reads(() =>
               McpInvocationContext.McpInvocationContext.pipe(
                 Effect.tap((scope) => Effect.sync(() => seen.push(scope))),
+                Effect.andThen(CurrentCommandIssuer),
+                Effect.tap((issuer) => Effect.sync(() => issuers.push(issuer))),
                 Effect.as({ ok: true }),
               ),
             ),
@@ -1376,6 +1380,10 @@ it.effect("admits provider and OAuth client credentials and points only clients 
       expect(seen.map((scope) => scope.requestNamespace)).toEqual([
         "provider-session",
         "client:session-1",
+      ]);
+      expect(issuers).toEqual([
+        { kind: "agent", threadId: "thread-provider", providerInstanceId: "codex" },
+        { kind: "mcp-client", sessionId: "session-1", label: "Claude Code" },
       ]);
 
       const missing = yield* call(undefined);

@@ -49,6 +49,7 @@ import * as Semaphore from "effect/Semaphore";
 import * as Stream from "effect/Stream";
 import * as SqlClient from "effect/sql/SqlClient";
 
+import { withCommandIssuer } from "../orchestration-v2/CommandIssuer.ts";
 import * as ThreadLaunchService from "../orchestration-v2/ThreadLaunchService.ts";
 import * as ManagedProjectFolders from "../project/ManagedProjectFolders.ts";
 import * as Metrics from "../observability/Metrics.ts";
@@ -1213,7 +1214,7 @@ export const layer = Layer.effect(
         }),
         (reserved) =>
           reserved
-            ? run
+            ? run.pipe(withCommandIssuer({ kind: "scheduled-task", taskId: task.id, trigger }))
             : trigger !== "scheduled"
               ? Effect.fail(taskError("Schedule task is already running.", { taskId: task.id }))
               : Effect.succeed({ task, threadId: null, dispatchFailed: false }),

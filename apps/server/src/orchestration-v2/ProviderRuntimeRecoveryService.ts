@@ -1066,6 +1066,7 @@ export const make = Effect.gen(function* () {
         const result = yield* eventSink
           .commitCommand({
             commandId,
+            issuer: { kind: "system" },
             threadId: projection.thread.id,
             commandType: "provider-runtime.reconcile",
             acceptedAt: now,

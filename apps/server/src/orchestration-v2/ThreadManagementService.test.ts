@@ -185,6 +185,7 @@ it.effect(
       const receipts = yield* CommandReceiptStore.CommandReceiptStoreV2;
       yield* receipts.insertIfAbsent({
         commandId,
+        issuer: null,
         threadId,
         commandType: "message.dispatch",
         acceptedAt: yield* DateTime.now,

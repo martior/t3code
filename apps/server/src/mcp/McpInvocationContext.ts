@@ -14,6 +14,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";
 import { formatThreadLink, hostedThreadLink } from "@t3tools/shared/threadLinks";
+import { type CommandIssuer, withCommandIssuer } from "../orchestration-v2/CommandIssuer.ts";
 
 const ALL_MCP_CAPABILITIES = [
   "preview",
@@ -165,6 +166,33 @@ export const threadLinkFor = (
     ? formatThreadLink(ref, title)
     : hostedThreadLink(ref, hostedAppUrl);
 };
+
+/** A thread caller is one of T3's own agents; a client is an OAuth session, a link's or not. */
+const commandIssuerFor = (scope: McpInvocationScope): CommandIssuer =>
+  scope.thread !== undefined
+    ? {
+        kind: "agent",
+        threadId: scope.thread.threadId,
+        providerInstanceId: scope.thread.providerInstanceId,
+      }
+    : scope.client !== undefined
+      ? {
+          kind: scope.client.linked === true ? "peer" : "mcp-client",
+          sessionId: scope.client.sessionId,
+          label: scope.client.label,
+        }
+      : { kind: "system" };
+
+/** Provides the scope and the issuer the commands it dispatches carry. */
+export const provideInvocation =
+  (scope: McpInvocationScope) =>
+  <A, E, R>(
+    effect: Effect.Effect<A, E, R>,
+  ): Effect.Effect<A, E, Exclude<R, McpInvocationContext>> =>
+    effect.pipe(
+      Effect.provideService(McpInvocationContext, scope),
+      withCommandIssuer(commandIssuerFor(scope)),
+    );
 
 export class McpInvocationContext extends Context.Service<
   McpInvocationContext,

@@ -129,6 +129,7 @@ import * as GuestShareService from "./guest/GuestShareService.ts";
 import * as ServerEnvironment from "./environment/ServerEnvironment.ts";
 import * as ServerLifecycleEvents from "./serverLifecycleEvents.ts";
 import * as ServerRuntimeStartup from "./serverRuntimeStartup.ts";
+import { type CommandIssuer, CurrentCommandIssuer } from "./orchestration-v2/CommandIssuer.ts";
 import * as ServerSelfUpdate from "./cloud/selfUpdate.ts";
 import * as NpmRelease from "./cloud/npmRelease.ts";
 import * as SessionStore from "./auth/SessionStore.ts";
@@ -2056,6 +2057,80 @@ it.effect("a publish whose push fails still refreshes the new remote", () =>
       [yield* Queue.take(refreshes), yield* Queue.take(refreshes)],
       ["identity /repo refresh=true", "status /repo"],
     );
+  }).pipe(
+    Effect.provide(
+      Layer.mergeAll(
+        Layer.fresh(layerConfigSources),
+        Layer.mock(PreviewAutomationBroker.PreviewAutomationBroker)({}),
+        Layer.mock(ServerBrowser.ServerBrowser)({}),
+      ),
+    ),
+  ),
+);
+
+it.effect("commands a WebSocket client issues carry its session as their issuer", () =>
+  Effect.gen(function* () {
+    const issued = yield* Deferred.make<CommandIssuer>();
+    const services = Layer.mergeAll(
+      layerUnusedConfigRpcServices,
+      Layer.mock(ServerRuntimeStartup.ServerRuntimeStartup)({ enqueueCommand: (effect) => effect }),
+      Layer.mock(ProjectService.ProjectService)({
+        update: () =>
+          CurrentCommandIssuer.pipe(
+            Effect.flatMap((issuer) => Deferred.succeed(issued, issuer)),
+            Effect.andThen(Effect.die("captured")),
+          ),
+      }),
+      Layer.mock(ExternalLauncher.ExternalLauncher)({}),
+      Layer.mock(ProviderRegistry.ProviderRegistry)({}),
+      Layer.mock(UsageLimitSources.UsageLimitSources)({}),
+      Layer.mock(RemoteOpenTargets.RemoteOpenTargets)({}),
+      Layer.mock(DirectEndpoints.DirectEndpoints)({}),
+      Layer.mock(ManagedProjectFolders.ManagedProjectFolders)({ namedProjectsRoot: "/unused" }),
+      Layer.mock(ScratchThreadPromotion.ScratchThreadPromotion)({}),
+      Layer.mock(ServerEnvironment.ServerEnvironment)({}),
+      Layer.mock(EnvironmentAuth.EnvironmentAuth)({}),
+    );
+    const server = yield* RpcServer.makeNoSerialization(WsRpcGroup, {
+      ...WS_RPC_SERVER_OPTIONS,
+      onFromServer: () => Effect.void,
+    }).pipe(
+      Effect.provide(
+        layerWsRpc(
+          {
+            sessionId: AuthSessionId.make("issuer-test"),
+            subject: "browser",
+            method: "dpop-access-token",
+            scopes: [AuthOrchestrationOperateScope],
+          },
+          {},
+          yield* ServerBrowser.ServerBrowser,
+          () => Effect.void,
+          { secretReferences: true },
+        ).pipe(
+          Layer.provide(services),
+          Layer.merge(RpcAuthorization.layer([AuthOrchestrationOperateScope])),
+        ),
+      ),
+    );
+    yield* server.write(0, {
+      _tag: "Request",
+      id: RpcMessage.RequestId("project"),
+      tag: WS_METHODS.projectsMutate,
+      payload: {
+        type: "project.update",
+        commandId: "command:issuer-test",
+        projectId: "project:issuer-test",
+        title: "Renamed",
+      },
+      headers: Headers.empty,
+    });
+    assert.deepEqual(yield* Deferred.await(issued), {
+      kind: "session",
+      sessionId: "issuer-test",
+      subject: "browser",
+      method: "dpop-access-token",
+    });
   }).pipe(
     Effect.provide(
       Layer.mergeAll(
