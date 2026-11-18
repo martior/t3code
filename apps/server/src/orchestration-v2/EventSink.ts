@@ -32,6 +32,7 @@ import type { UnsequencedProjectEvent } from "../persistence/OrchestrationEventS
 import { projectStoredEventForWire } from "./WireProjection.ts";
 import { makeRunOutcomeRecorder, type RunOutcome } from "./RunMetrics.ts";
 
+import type { CommandIssuer } from "./CommandIssuer.ts";
 import * as CommandReceiptStore from "./CommandReceiptStore.ts";
 import * as EffectOutbox from "./EffectOutbox.ts";
 import * as EventStore from "./EventStore.ts";
@@ -194,6 +195,7 @@ export interface EventSinkV2Shape {
   >;
   readonly commitCommand: (input: {
     readonly commandId: CommandId;
+    readonly issuer: CommandIssuer;
     readonly threadId: ThreadId;
     readonly commandType: string;
     readonly acceptedAt: DateTime.Utc;
@@ -216,6 +218,7 @@ export interface EventSinkV2Shape {
   >;
   readonly commitRejectedCommand: (input: {
     readonly commandId: CommandId;
+    readonly issuer: CommandIssuer;
     readonly threadId: ThreadId;
     readonly commandType: string;
     readonly rejectedAt: DateTime.Utc;
@@ -223,6 +226,7 @@ export interface EventSinkV2Shape {
   }) => Effect.Effect<CommandReceiptStore.CommandReceiptV2, EventSinkV2Error>;
   readonly commitProjectCommand: (input: {
     readonly commandId: CommandId;
+    readonly issuer: CommandIssuer;
     readonly projectId: ProjectId;
     readonly commandType: string;
     readonly acceptedAt: DateTime.Utc;
@@ -233,6 +237,7 @@ export interface EventSinkV2Shape {
   >;
   readonly commitRejectedProjectCommand: (input: {
     readonly commandId: CommandId;
+    readonly issuer: CommandIssuer;
     readonly projectId: ProjectId;
     readonly commandType: string;
     readonly rejectedAt: DateTime.Utc;
@@ -773,6 +778,7 @@ const layerBase: Layer.Layer<
             resultSequence: 0,
             status: "accepted",
             error: null,
+            issuer: input.issuer,
           });
           if (!reserved) {
             const existing = yield* existingCommandResult(input.commandId);
@@ -799,6 +805,7 @@ const layerBase: Layer.Layer<
                   resultSequence: yield* eventStore.latestSequence({ threadId: input.threadId }),
                   status: "rejected",
                   error: "Cannot fork a missing or deleted thread.",
+                  issuer: input.issuer,
                 };
                 yield* commandReceipts.upsert(receipt);
                 return {
@@ -842,6 +849,7 @@ const layerBase: Layer.Layer<
             resultSequence: sequence,
             status: "accepted",
             error: null,
+            issuer: input.issuer,
           };
           yield* commandReceipts.upsert(receipt);
           const cancelledEffectIds =
@@ -884,6 +892,7 @@ const layerBase: Layer.Layer<
             resultSequence: sequence,
             status: "rejected",
             error: input.error,
+            issuer: input.issuer,
           };
           const inserted = yield* commandReceipts.insertIfAbsent(receipt);
           if (inserted) {
@@ -918,6 +927,7 @@ const layerBase: Layer.Layer<
               resultSequence: 0,
               status: "accepted",
               error: null,
+              issuer: input.issuer,
             };
             if (!(yield* commandReceipts.insertIfAbsent(reserved))) {
               return { receipt: yield* existingProjectReceipt(input.commandId), event: undefined };
@@ -948,6 +958,7 @@ const layerBase: Layer.Layer<
             resultSequence: yield* eventStore.latestApplicationSequence,
             status: "rejected",
             error: input.error,
+            issuer: input.issuer,
           };
           return (yield* commandReceipts.insertIfAbsent(receipt))
             ? receipt

@@ -1573,6 +1573,7 @@ it.layer(layerTest)("orchestration V2 foundation persistence", (it) => {
         const exit = yield* Effect.exit(
           eventSink.commitCommand({
             commandId,
+            issuer: { kind: "system" },
             threadId,
             commandType: "checkpoint.atomicity-test",
             acceptedAt: now,
@@ -1744,6 +1745,7 @@ it.layer(layerTest)("orchestration V2 foundation persistence", (it) => {
       const retried = yield* eventSink
         .commitCommand({
           commandId,
+          issuer: { kind: "system" },
           threadId: ThreadId.make(threadId),
           commandType: "thread.create",
           acceptedAt: now,
@@ -1792,6 +1794,7 @@ it.layer(layerTest)("orchestration V2 foundation persistence", (it) => {
 
       const first = yield* eventSink.commitCommand({
         commandId,
+        issuer: { kind: "system" },
         threadId,
         commandType: "foundation.effect-recovery",
         acceptedAt: now,
@@ -1800,6 +1803,7 @@ it.layer(layerTest)("orchestration V2 foundation persistence", (it) => {
       });
       const retry = yield* eventSink.commitCommand({
         commandId,
+        issuer: { kind: "system" },
         threadId,
         commandType: "foundation.effect-recovery",
         acceptedAt: now,
@@ -3612,6 +3616,7 @@ it.layer(layerTest)("orchestration V2 foundation persistence", (it) => {
       const thread = makeThread(threadId, now);
       yield* eventSink.commitCommand({
         commandId,
+        issuer: { kind: "system" },
         threadId,
         commandType: "foundation.process-loss",
         acceptedAt: now,
@@ -3726,6 +3731,7 @@ it.layer(layerTest)("orchestration V2 foundation persistence", (it) => {
       });
       yield* eventSink.commitCommand({
         commandId: CommandId.make("command:foundation-native-subagent"),
+        issuer: { kind: "system" },
         threadId: parentId,
         commandType: "foundation.native-subagent",
         acceptedAt: now,

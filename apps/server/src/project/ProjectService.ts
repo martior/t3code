@@ -39,6 +39,7 @@ import * as ProcessRunner from "../processRunner.ts";
 import * as ProjectEnrichmentService from "./ProjectEnrichmentService.ts";
 import { makeIsWorktreeContainer } from "./worktreeContainer.ts";
 import * as WorkspacePaths from "../workspace/WorkspacePaths.ts";
+import { CurrentCommandIssuer } from "../orchestration-v2/CommandIssuer.ts";
 
 export interface ProjectCreateInput extends ProjectCreatePayload {
   readonly commandId: CommandId;
@@ -289,6 +290,7 @@ export const make = Effect.gen(function* () {
       if (Result.isSuccess(planned)) {
         const { receipt } = yield* eventSink.commitProjectCommand({
           commandId: command.commandId,
+          issuer: yield* CurrentCommandIssuer,
           projectId,
           commandType: command.type,
           acceptedAt: now,
@@ -298,6 +300,7 @@ export const make = Effect.gen(function* () {
       }
       return yield* eventSink.commitRejectedProjectCommand({
         commandId: command.commandId,
+        issuer: yield* CurrentCommandIssuer,
         projectId,
         commandType: command.type,
         rejectedAt: now,
@@ -496,6 +499,7 @@ export const make = Effect.gen(function* () {
     });
     const committed = yield* eventSink.commitCommand({
       commandId: command.commandId,
+      issuer: yield* CurrentCommandIssuer,
       commandType: command.type,
       threadId,
       acceptedAt: now,

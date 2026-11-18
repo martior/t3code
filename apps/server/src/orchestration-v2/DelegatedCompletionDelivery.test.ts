@@ -1278,6 +1278,7 @@ it.layer(layerTest)("delegated completion delivery repairs", (it) => {
                   // The provider turn ends (or its checkpoint lands) after the command read the run.
                   yield* commit({
                     commandId: CommandId.make(`command:${race}`),
+                    issuer: { kind: "system" },
                     threadId,
                     commandType: capture ? "checkpoint.capture" : "provider.event",
                     acceptedAt: now,
@@ -2237,6 +2238,7 @@ it.layer(Layer.merge(layerTest, ProviderContinuationRequests.layer))(
                   const { delegatedCompletion: _cohort, ...captureRun } = waiting;
                   yield* sink.commitCommand({
                     commandId: CommandId.make("command:completion-capture-race"),
+                    issuer: { kind: "system" },
                     threadId,
                     commandType: "checkpoint.capture",
                     acceptedAt: now,

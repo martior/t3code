@@ -1,12 +1,16 @@
 import { assert, describe, it } from "@effect/vitest";
 import * as NodeSqliteClient from "@t3tools/shared/nodeSqliteClient";
 import * as NodeServices from "@effect/platform-node/NodeServices";
+import { CommandId } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as FileSystem from "effect/FileSystem";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Path from "effect/Path";
 import * as SqlClient from "effect/sql/SqlClient";
 
+import * as CommandReceiptStore from "../orchestration-v2/CommandReceiptStore.ts";
 import { migrationManifest, runMigrations } from "./Migrations.ts";
 
 const v2Migrations = migrationManifest.filter(([id]) => id >= 55);
@@ -120,6 +124,36 @@ describe("runMigrations", () => {
       `;
       assert.deepStrictEqual(events, [{ correlation_id: "correlation-1" }]);
     }).pipe(Effect.provide(NodeSqliteClient.layer({ filename: ":memory:" }))),
+  );
+
+  it.effect("reads receipts written before issuers were recorded as unknown", () =>
+    Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient;
+      yield* runMigrations({ toMigrationInclusive: 98 });
+      yield* sql`
+        INSERT INTO orchestration_command_receipts (
+          command_id, aggregate_kind, aggregate_id, command_type, accepted_at,
+          result_sequence, status, error
+        )
+        VALUES (
+          'command-old', 'thread', 'thread-old', 'thread.create', '2026-01-01T00:00:00.000Z',
+          1, 'accepted', NULL
+        )
+      `;
+
+      yield* runMigrations();
+
+      const receipts = yield* CommandReceiptStore.CommandReceiptStoreV2;
+      const receipt = yield* receipts.getByCommandId(CommandId.make("command-old"));
+      assert.isTrue(Option.isSome(receipt));
+      assert.isNull(Option.getOrThrow(receipt).issuer);
+    }).pipe(
+      Effect.provide(
+        CommandReceiptStore.layer.pipe(
+          Layer.provideMerge(NodeSqliteClient.layer({ filename: ":memory:" })),
+        ),
+      ),
+    ),
   );
 
   it.effect.each([30, 54])("still starts with a site-local migration at id %s", (id) =>

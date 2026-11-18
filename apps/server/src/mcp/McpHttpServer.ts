@@ -321,7 +321,7 @@ const makeMcpAuthMiddleware = Effect.gen(function* () {
     if (HttpServerResponse.isHttpServerResponse(admitted)) return admitted;
     if (yield* isUndefinedNotification(request)) return HttpServerResponse.empty({ status: 202 });
     return yield* httpEffect.pipe(
-      Effect.provideService(McpInvocationContext.McpInvocationContext, admitted),
+      McpInvocationContext.provideInvocation(admitted),
       Effect.map(normalizeMcpHttpResponse),
     );
   }) satisfies McpAuthMiddleware;
@@ -1357,8 +1357,7 @@ export const layerInProcessMcpServer = McpServer.middleware<{
       Effect.serviceOption(McpInvocationContext.McpInvocationContext),
       Option.match({
         onNone: () => Effect.die("Provide McpInvocationContext around the in-process MCP call."),
-        onSome: (scope) =>
-          Effect.provideService(effect, McpInvocationContext.McpInvocationContext, scope),
+        onSome: (scope) => McpInvocationContext.provideInvocation(scope)(effect),
       }),
     ),
   { global: true },

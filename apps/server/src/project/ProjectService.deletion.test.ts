@@ -395,6 +395,7 @@ it.effect("rejects a child deletion command ID already accepted for an unrelated
       yield* eventSink.write({ events: [nativeThreadCreated(projectId, threadId)] });
       const accepted = yield* eventSink.commitCommand({
         commandId: CommandId.make(`${commandId}:delete-thread:${threadId}`),
+        issuer: { kind: "system" },
         commandType: "thread.create",
         threadId: otherThreadId,
         acceptedAt: DateTime.makeUnsafe("2026-01-01T00:00:00.000Z"),
@@ -481,6 +482,7 @@ it.effect("deletes a project without force once its imported threads were delete
       });
       yield* eventSink.commitCommand({
         commandId: command.commandId,
+        issuer: { kind: "system" },
         commandType: command.type,
         threadId,
         acceptedAt: now,

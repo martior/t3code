@@ -6,6 +6,11 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as OrchestrationCommandReceipts from "../persistence/OrchestrationCommandReceipts.ts";
+import {
+  CommandIssuer,
+  decodeStoredCommandIssuer,
+  encodeCommandIssuerJson,
+} from "./CommandIssuer.ts";
 
 export class CommandReceiptStoreWriteError extends Schema.TaggedError<CommandReceiptStoreWriteError>()(
   "CommandReceiptStoreWriteError",
@@ -48,6 +53,8 @@ export const CommandReceiptV2 = Schema.Struct({
   resultSequence: NonNegativeInt,
   status: CommandReceiptV2Status,
   error: Schema.NullOr(Schema.String),
+  /** Null when unknown: the receipt predates issuer recording. */
+  issuer: Schema.NullOr(CommandIssuer),
 });
 export type CommandReceiptV2 = typeof CommandReceiptV2.Type;
 
@@ -59,6 +66,8 @@ export const ProjectCommandReceiptV2 = Schema.Struct({
   resultSequence: NonNegativeInt,
   status: CommandReceiptV2Status,
   error: Schema.NullOr(Schema.String),
+  /** Null when unknown: the receipt predates issuer recording. */
+  issuer: Schema.NullOr(CommandIssuer),
 });
 export type ProjectCommandReceiptV2 = typeof ProjectCommandReceiptV2.Type;
 
@@ -108,6 +117,7 @@ function fromApplicationReceipt(receipt: OrchestrationCommandReceipts.Orchestrat
     resultSequence: receipt.resultSequence,
     status: receipt.status,
     error: receipt.error,
+    issuer: decodeStoredCommandIssuer(receipt.issuerJson),
   });
 }
 
@@ -124,6 +134,7 @@ function toApplicationReceipt(
     resultSequence: receipt.resultSequence,
     status: receipt.status,
     error: receipt.error,
+    issuerJson: receipt.issuer === null ? null : encodeCommandIssuerJson(receipt.issuer),
   };
 }
 
@@ -189,6 +200,7 @@ const layerBase: Layer.Layer<
                   resultSequence: receipt.value.resultSequence,
                   status: receipt.value.status,
                   error: receipt.value.error,
+                  issuer: decodeStoredCommandIssuer(receipt.value.issuerJson),
                 }).pipe(Effect.asSome),
           ),
           Effect.mapError((cause) => new CommandReceiptStoreReadError({ commandId, cause })),

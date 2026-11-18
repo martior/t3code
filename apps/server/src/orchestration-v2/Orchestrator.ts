@@ -121,6 +121,7 @@ import {
   providerTurnCapabilities,
   resolveMessageDispatchIntent,
 } from "./CommandPolicy.ts";
+import { CurrentCommandIssuer } from "./CommandIssuer.ts";
 import { CommandReceiptStoreV2, type CommandReceiptV2 } from "./CommandReceiptStore.ts";
 import {
   ContextHandoffServiceV2,
@@ -15501,6 +15502,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
       "orchestration_v2.command_type": command.type,
       "orchestration_v2.thread_id": commandThreadId(command),
     });
+    const issuer = yield* CurrentCommandIssuer;
 
     const existingReceipt = yield* commandReceipts.getByCommandId(command.commandId).pipe(
       Effect.mapError(
@@ -15592,6 +15594,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
           const receipt = yield* eventSink
             .commitRejectedCommand({
               commandId: command.commandId,
+              issuer,
               threadId: commandThreadId(command),
               commandType: command.type,
               rejectedAt,
@@ -15630,6 +15633,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
         const sequence = yield* eventSink.latestSequence({ threadId: commandThreadId(command) });
         const inserted = yield* commandReceipts.insertIfAbsent({
           commandId: command.commandId,
+          issuer,
           threadId: commandThreadId(command),
           commandType: command.type,
           acceptedAt: yield* DateTime.now,
@@ -15671,6 +15675,7 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
       .commitCommand({
         commandId: command.commandId,
         threadId: commandThreadId(command),
+        issuer,
         commandType: command.type,
         acceptedAt,
         events:

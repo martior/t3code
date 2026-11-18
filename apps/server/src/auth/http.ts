@@ -40,6 +40,7 @@ import { traceAuthenticatedRelayRequest, traceRelayRequest } from "../cloud/trac
 import { deriveAuthClientMetadata } from "./utils.ts";
 import { checkRequestDpopProof } from "./dpop.ts";
 import { requestUrl } from "../requestUrl.ts";
+import { sessionCommandIssuer, withCommandIssuer } from "../orchestration-v2/CommandIssuer.ts";
 
 const CREDENTIAL_RESPONSE_HEADERS = {
   "cache-control": "no-store",
@@ -265,6 +266,7 @@ export const layerAuthenticatedAuth = Layer.effect(
             ...session,
             scopes: new Set(session.scopes),
           }),
+          withCommandIssuer(sessionCommandIssuer(session)),
         );
         return yield* session.subject === EnvironmentAuth.CLOUD_CONNECT_SUBJECT
           ? traceAuthenticatedRelayRequest(handler, { startTime, endTime })

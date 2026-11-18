@@ -6,6 +6,7 @@ import * as Context from "effect/Context";
 import * as NodeHttpServerRequest from "@effect/platform-node/NodeHttpServerRequest";
 import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as Orchestrator from "./orchestration-v2/Orchestrator.ts";
+import { sessionCommandIssuer, withCommandIssuer } from "./orchestration-v2/CommandIssuer.ts";
 import * as PeerLinkRequests from "./peer/PeerLinkRequests.ts";
 import * as PeerLinks from "./peer/PeerLinks.ts";
 
@@ -3585,7 +3586,10 @@ export const layerWsRpc = (
         yield* SplitWsRpcGroup.toHandlers(splitHandlers),
         yield* OtherWsRpcGroup.toHandlers(otherHandlers),
       );
-    }),
+    }).pipe(
+      // Handlers capture this context, so every command they dispatch carries the session.
+      withCommandIssuer(sessionCommandIssuer(currentSession)),
+    ),
   );
 
 // Default socket-level Defect frames end every pending client request.

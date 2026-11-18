@@ -12,9 +12,12 @@ import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Ref from "effect/Ref";
 import * as SqlitePersistence from "../persistence/Sqlite.ts";
 import { CodexProviderCapabilitiesV2 } from "./Adapters/CodexAdapterV2.ts";
+import { type CommandIssuer, withCommandIssuer } from "./CommandIssuer.ts";
+import * as CommandReceiptStore from "./CommandReceiptStore.ts";
 import * as Orchestrator from "./Orchestrator.ts";
 import * as ProjectionStore from "./ProjectionStore.ts";
 import * as ProviderAdapterRegistry from "./ProviderAdapterRegistry.ts";
@@ -165,4 +168,64 @@ it.effect("a command id reused concurrently for two threads succeeds for only on
       );
     }
   }).pipe(Effect.provide(layerTest)),
+);
+
+it.effect("a command's receipt records who issued it", () =>
+  Effect.gen(function* () {
+    const orchestrator = yield* Orchestrator.OrchestratorV2;
+    const receipts = yield* CommandReceiptStore.CommandReceiptStoreV2;
+    const threadId = ThreadId.make("thread:issuer");
+    const session: CommandIssuer = {
+      kind: "session",
+      sessionId: "session-1",
+      subject: "browser",
+      method: "browser-session-cookie",
+    };
+    const create = CommandId.make("command:issuer-create");
+    yield* orchestrator
+      .dispatch({
+        type: "thread.create",
+        commandId: create,
+        threadId,
+        projectId: ProjectId.make("project:issuer"),
+        title: "Issuer",
+        modelSelection,
+        runtimeMode: "full-access",
+        interactionMode: "default",
+        branch: null,
+        worktreePath: null,
+        createdBy: "user",
+        creationSource: "web",
+      })
+      .pipe(withCommandIssuer(session));
+    // A command that changes nothing still records its receipt, and its issuer.
+    const noOp = CommandId.make("command:issuer-noop");
+    yield* orchestrator
+      .dispatch({ type: "thread.guest-share.close", commandId: noOp, threadId })
+      .pipe(withCommandIssuer({ kind: "mcp-client", sessionId: "session-2", label: "Client" }));
+    // Nothing wraps the server's own work, such as the effect worker's commands.
+    const internal = CommandId.make("command:issuer-internal");
+    yield* orchestrator.dispatch({
+      type: "thread.model-selection.set",
+      commandId: internal,
+      threadId,
+      modelSelection: { ...modelSelection, model: "gpt-6" },
+    });
+
+    const issuerOf = (commandId: CommandId) =>
+      receipts
+        .getByCommandId(commandId)
+        .pipe(Effect.map((receipt) => Option.getOrThrow(receipt).issuer));
+    assert.deepEqual(yield* issuerOf(create), session);
+    assert.deepEqual(yield* issuerOf(noOp), {
+      kind: "mcp-client",
+      sessionId: "session-2",
+      label: "Client",
+    });
+    assert.deepEqual(yield* issuerOf(internal), { kind: "system" });
+  }).pipe(
+    Effect.provide(
+      Layer.merge(layerTest, CommandReceiptStore.layer.pipe(Layer.provide(layerDatabase))),
+    ),
+  ),
 );
