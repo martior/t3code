@@ -86,5 +86,5 @@ from the image and keeps every member's data. Running agent turns stop.
 - Only `t3-runner` uses the Docker socket. It is never mounted into a member's container.
 - Each server listens only on loopback inside its container. Members reach it through their own
   T3 Connect link, not through a port on the host.
-- Containers share the host's default Docker network, so a service an agent starts on a container
-  address is reachable from other members' containers.
+- Each member's container has its own Docker network. It can reach the internet, but not other
+  members' containers or the services their agents start.

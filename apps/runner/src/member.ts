@@ -13,3 +13,4 @@ export const MEMBER_LABEL = "codes.t3.runner.member";
 
 export const containerName = (member: MemberName) => `t3-runner-${member}`;
 export const volumeName = (member: MemberName) => `t3-runner-${member}`;
+export const networkName = (member: MemberName) => `t3-runner-${member}`;

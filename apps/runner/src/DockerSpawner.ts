@@ -5,7 +5,14 @@ import * as Stream from "effect/Stream";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 import type { RunnerConfig } from "./config.ts";
-import { containerName, MANAGED_LABEL, MEMBER_LABEL, MemberName, volumeName } from "./member.ts";
+import {
+  containerName,
+  MANAGED_LABEL,
+  MEMBER_LABEL,
+  MemberName,
+  networkName,
+  volumeName,
+} from "./member.ts";
 import * as Spawner from "./Spawner.ts";
 
 /** The image's `t3` user. Passed explicitly so an image without `USER` still never runs as root. */
@@ -26,12 +33,28 @@ const volumeCreateArgs = (member: MemberName): ReadonlyArray<string> => [
   volumeName(member),
 ];
 
+// Each member gets its own bridge network: outbound access works, but no member can reach
+// another member's dev servers or ports.
+const networkCreateArgs = (member: MemberName): ReadonlyArray<string> => [
+  "network",
+  "create",
+  "--driver",
+  "bridge",
+  "--label",
+  `${MANAGED_LABEL}=true`,
+  "--label",
+  `${MEMBER_LABEL}=${member}`,
+  networkName(member),
+];
+
 export const createArgs = (member: MemberName, config: RunnerConfig): ReadonlyArray<string> => [
   "create",
   "--name",
   containerName(member),
   "--hostname",
   member,
+  "--network",
+  networkName(member),
   "--label",
   `${MANAGED_LABEL}=true`,
   "--label",
@@ -110,7 +133,7 @@ const make = Effect.gen(function* () {
   const run = Effect.fn("DockerSpawner.run")(function* (
     operation: string,
     args: ReadonlyArray<string>,
-    options?: { readonly allowMissing?: boolean },
+    options?: { readonly allowMissing?: boolean; readonly allowExisting?: boolean },
   ) {
     const fail = (detail: string) => new Spawner.SpawnerError({ operation, detail });
     const { stdout, stderr, exitCode } = yield* Effect.gen(function* () {
@@ -125,9 +148,13 @@ const make = Effect.gen(function* () {
       Effect.mapError((error) => fail(error.message)),
     );
     if (exitCode === 0) return stdout;
-    if (options?.allowMissing === true && /no such (container|volume|object)/i.test(stderr)) {
+    if (
+      options?.allowMissing === true &&
+      /no such (container|volume|object)|network \S+ not found/i.test(stderr)
+    ) {
       return "";
     }
+    if (options?.allowExisting === true && /already exists/i.test(stderr)) return "";
     return yield* fail(stderr.trim().slice(-500) || `docker exited with ${exitCode}`);
   });
 
@@ -136,6 +163,7 @@ const make = Effect.gen(function* () {
   return Spawner.Spawner.of({
     create: Effect.fn("DockerSpawner.create")(function* (member, config) {
       yield* run("create volume", volumeCreateArgs(member));
+      yield* run("create network", networkCreateArgs(member), { allowExisting: true });
       yield* run("create container", createArgs(member, config));
     }),
     start: Effect.fn("DockerSpawner.start")(function* (member) {
@@ -153,9 +181,13 @@ const make = Effect.gen(function* () {
       yield* run("remove container", ["rm", "--force", containerName(member)], {
         allowMissing: true,
       });
+      yield* run("remove network", ["network", "rm", networkName(member)], { allowMissing: true });
       if (wipe) {
         yield* run("remove volume", ["volume", "rm", volumeName(member)], { allowMissing: true });
       }
+    }),
+    output: Effect.fn("DockerSpawner.output")(function* (member, command) {
+      return yield* run("exec", ["exec", containerName(member), ...command]);
     }),
     exec: Effect.fn("DockerSpawner.exec")(function* (member, command, { tty }) {
       const docker = ChildProcess.make(

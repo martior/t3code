@@ -72,6 +72,7 @@ describe("DockerSpawner", () => {
       assert.deepStrictEqual(args.slice(0, 3), ["create", "--name", "t3-runner-alice"]);
       assert.strictEqual(args.at(-1), "registry.example/t3-runner:1");
       assert.deepStrictEqual(flagValues(args, "--user"), ["1000:1000"]);
+      assert.deepStrictEqual(flagValues(args, "--network"), ["t3-runner-alice"]);
       assert.deepStrictEqual(flagValues(args, "--memory"), ["6g"]);
       assert.deepStrictEqual(flagValues(args, "--memory-swap"), ["6g"]);
       assert.deepStrictEqual(flagValues(args, "--cpus"), ["1.5"]);
@@ -93,8 +94,15 @@ describe("DockerSpawner", () => {
     }),
   );
 
-  it.effect("creates the member volume before the container", () => {
-    const docker = fakeDocker(() => ({}));
+  it.effect("creates the member volume and network before the container", () => {
+    const docker = fakeDocker((args) =>
+      args[0] === "network"
+        ? {
+            code: 1,
+            stderr: "Error response from daemon: network with name t3-runner-alice already exists",
+          }
+        : {},
+    );
     return Effect.gen(function* () {
       const config = yield* decodeRunnerConfig("runner.json", STARTER_CONFIG);
       yield* (yield* Spawner.Spawner).create(alice, config);
@@ -102,6 +110,7 @@ describe("DockerSpawner", () => {
         docker.calls.map((args) => args.slice(0, 2)),
         [
           ["volume", "create"],
+          ["network", "create"],
           ["create", "--name"],
         ],
       );
@@ -137,12 +146,19 @@ describe("DockerSpawner", () => {
 
   it.effect("keeps the volume unless wiping, and tolerates missing objects", () => {
     const docker = fakeDocker((args) =>
-      args[0] === "rm" ? { code: 1, stderr: "Error: No such container: t3-runner-alice" } : {},
+      args[0] === "rm"
+        ? { code: 1, stderr: "Error: No such container: t3-runner-alice" }
+        : args[0] === "network"
+          ? { code: 1, stderr: "Error response from daemon: network t3-runner-alice not found" }
+          : {},
     );
     return Effect.gen(function* () {
       const spawner = yield* Spawner.Spawner;
       yield* spawner.remove(alice, { wipe: false });
-      assert.deepStrictEqual(docker.calls, [["rm", "--force", "t3-runner-alice"]]);
+      assert.deepStrictEqual(docker.calls, [
+        ["rm", "--force", "t3-runner-alice"],
+        ["network", "rm", "t3-runner-alice"],
+      ]);
       yield* spawner.remove(alice, { wipe: true });
       assert.deepStrictEqual(docker.calls.at(-1), ["volume", "rm", "t3-runner-alice"]);
     }).pipe(Effect.provide(docker.layer));

@@ -8,6 +8,7 @@ import { Argument, Command, Flag } from "effect/cli";
 
 import { loadRunnerConfig, writeStarterConfig } from "./config.ts";
 import * as DockerSpawner from "./DockerSpawner.ts";
+import { isLinkAuthorized, LINK_COMMAND, LINK_STATUS_COMMAND } from "./link.ts";
 import { MemberName } from "./member.ts";
 import * as Spawner from "./Spawner.ts";
 
@@ -22,8 +23,6 @@ const memberArgument = Argument.String("name").pipe(
   Argument.withDescription("Member name: lowercase letters, digits, and dashes."),
 );
 
-const LINK_COMMAND = ["t3", "connect", "link", "--headless"];
-
 /** Links the member's server to their own T3 account, then restarts it so it opens the tunnel. */
 const linkMember = Effect.fn("runner.linkMember")(function* (member: MemberName) {
   const spawner = yield* Spawner.Spawner;
@@ -31,7 +30,12 @@ const linkMember = Effect.fn("runner.linkMember")(function* (member: MemberName)
   const exitCode = yield* spawner.exec(member, LINK_COMMAND, {
     tty: process.stdin.isTTY === true && process.stdout.isTTY === true,
   });
-  if (exitCode !== 0) {
+  const status =
+    exitCode === 0
+      ? yield* spawner.output(member, LINK_STATUS_COMMAND).pipe(Effect.orElseSucceed(() => ""))
+      : "";
+  const authorized = isLinkAuthorized(status);
+  if (!authorized) {
     yield* Console.error(
       `\n${member}'s server is running but not linked. Retry with \`t3-runner member link ${member}\`.`,
     );

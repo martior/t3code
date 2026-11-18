@@ -39,6 +39,11 @@ export class Spawner extends Context.Service<
       member: MemberName,
       options: { readonly wipe: boolean },
     ) => Effect.Effect<void, SpawnerError>;
+    /** Runs a command in the member's running server and returns its stdout. */
+    readonly output: (
+      member: MemberName,
+      command: ReadonlyArray<string>,
+    ) => Effect.Effect<string, SpawnerError>;
     /** Runs a command in the member's running server with this terminal attached. */
     readonly exec: (
       member: MemberName,
